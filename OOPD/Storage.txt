@@ -1,0 +1,321 @@
+USES Food.txt
+USES FileIO.txt
+
+CLASS Storage
+    PUBLIC
+        STATIC
+            (Integer) FREEZER_INDEX = 0
+            (Integer) FRIDGE_INDEX = 1
+            (Integer) PANTRY_RANGE = 2
+
+            TEMPERATURE_RANGE = Array OF Array OF Real WITH 
+                [-27.0, -5.0]
+                [-2.0, 6.0]
+                [8.0, 25.0]
+
+            AREA_NAMES = Array OF String WITH
+                "Freezer",
+                "Fridge",
+                "Pantry"
+        END STATIC
+    END PUBLIC
+
+    PRIVATE
+        FIELDS
+            (Array OF Array OF Food) stored
+            (Array OF Integer) counts
+        END FIELDS
+    END PRIVATE
+
+    CONSTRUCTORS
+        SUBMODULE Default
+        IMPORT none
+        EXPORT Storage instance
+        ALGORITHM
+            stored = Array OF Array OF Food SIZE 3
+            counts = Array OF Integer WITH 0, 0, 0
+        END ALGORITHM
+
+        SUBMODULE Alternate
+        IMPORT (String) fileName
+        EXPORT Storage instance
+        ALGORITHM
+            stored = Array OF Array OF Food SIZE 3
+            counts = Array OF Integer WITH 0, 0, 0
+
+            numLines = FileIO.getNumLines <- fileName
+
+            IF (numLines >= NUMBER_OF_AREAS) THEN
+                lines = FileIO.readNumLines <- fileName, numLines
+
+                FOR i = 0 TO length <- stored CHANGE 1 DO
+                    tokens = SPLIT lines[i] ON ", "
+
+                    TRY
+                        type = UPPERCASE tokens[0]
+                        size = (Convert to Integer) tokens[1]
+                    CATCH (Number Format)
+                        CHECKED FAIL <- "Invalid storage file"
+                    CATCH (Index out of bounds)
+                        CHECKED FAIL <- "Invalid storage file"
+                    END TRY CATCH
+
+                    IF (size < 0) THEN
+                        CHECKED FAIL <- "Size can't be negative"
+                    END IF
+
+                    IF (type EQUALS "FREEZER") THEN
+                        stored[FREEZER_INDEX] = Array OF Food SIZE size
+                    ELSE IF (type EQUALS "FRIDGE") THEN
+                        stored[FRIDGE_INDEX] = Array OF Food SIZE size
+                    ELSE IF (type EQUALS "PANTRY") THEN
+                        stored[PANTRY_INDEX] = Array OF Food SIZE size
+                    END IF
+
+                    FOR i = 0 TO length <- stored CHANGE 1 DO
+                        IF (stored[i] EQUALS NULL) THEN
+                            CHECKED FAIL <- "Ivalid storage file"
+                        END IF
+                    END FOR
+
+                    FOR i = length <- stored TO length <- lines CHANGE 1 DO
+                        TRY
+                            store <- FoodFactory.createFromLine <- lines[i]
+                        CATCH (Illegal Argument)
+                            OUTPUT "Skipping"
+                        CATCH (Index out of bounds)
+                            OUTPUT "Skipping"
+                        END TRY CATCH
+                    END FOR
+                END FOR
+            ELSE
+                CHECKED FAIL <- "Invalid storage file"
+            END IF
+        END ALGORITHM
+
+        SUBMODULE Copy
+        IMPORT (Storage) inStorage
+        EXPORT Storage instance
+        ALGORITHM
+            stored = inStorage.getStored <- none
+            counts = inStorage.getCounts <- none
+        END ALGORITHM
+    END CONSTRUCTORS
+
+    ACCESSORS
+        SUBMODULE getStored EXPORTS copyStored <- stored
+        SUBMODULE getCounts EXPORTS copyCounts <- counts
+    END ACCESSORS
+
+    PUBLIC
+        SUBMODULES
+            SUBMODULE getAreaCapacity
+            IMPORT (Integer) area
+            EXPORT (Integer) capacity
+            ALGORITHM
+                IF (NOT validStorageAreaIndex <- area) THEN
+                    FAIL <- "Invalid storage area"
+                END IF
+
+                capacity = stored[area].length
+            END ALGORITHM
+        END SUBMODULES
+
+        SUBMODULE getExpiredList
+        IMPORT none
+        EXPORT (String) list
+        ALGORITHM
+            list = ""
+            today = CONSTRUCT Date
+
+            FOR i = 0 TO length <- stored CHANGE 1 DO
+                j = 0
+
+                WHILE (stored[i][j] NOT EQUAL null AND j < length <- stored) DO
+                    food = stored[i][j]
+
+                    IF (food IS A IFood AND food.calcExpiry <- today) THEN
+                        list = list + "Expired food at " + (j + 1) +
+                               " in " + AREA_NAMES[i]
+                    END IF
+
+                    j = j + 1
+                END WHILE
+            END FOR
+        END ALGORITHM
+
+        SUBMODULE getContentsList
+        IMPORT none
+        EXPORT (String) contents
+        ALGORITHM
+            freezer = getContentsListIn <- FREEZER_INDEX
+            fridge = getContentsListIn <- FRIDGE_INDEX
+            pantry = getContentsListIn <- PANTRY_INDEX
+
+            contents = freezer + fridge + pantry
+        END ALGORITHM
+
+        SUBMODULE getContentsListIn
+        IMPORT (Integer) area
+        EXPORT (String) contents
+        ALGORITHM
+            IF (NOT validStorageAreaIndex <- area) THEN
+                FAIL <- "Invalid Storage Area"
+            END IF
+
+            index = 0
+            list = ""
+            storageArea = stored[area]
+
+            WHILE (storageArea[index] NOT EQUAL NULL AND 
+                    index < length <- storageArea)
+                list = list + storageArea[index].toString <- none
+                index = index + 1
+            END WHILE
+        END ALGORITHM
+
+        SUBMODULE store
+        IMPORT (Food) food
+        EXPORT none
+        ALGORITHM
+            isStored = false
+
+            temp = food.getStorageTemp <- none
+            index = 0
+
+            DO
+                range = TEMPERATURE_RANGE[index]
+
+                IF (temp > range[0] AND temp < range[1]) THEN
+                    IF (counts[index] < length <- stored[index]) THEN
+                        stored[index][counts[index]] = food
+                        counts[index] = counts[index] + 1
+                        isStored = true
+                    ELSE
+                        FAIL <- "Cannot store food in full " + AREA_NAMES[index]
+                    END IF
+                END IF
+            WHILE (!isStored && index < stored.length)
+        END ALGORITHM
+
+        SUBMODULE remove
+        IMPORT (Integer) area, (Integer) location
+        EXPORT none
+        ALGORITHM
+            IF (NOT validStorageAreaIndex <- area) THEN
+                FAIL <- "Invalid storage area"
+            ELSE IF (location < 0 || location >= length <- stored[area]) THEN
+                FAIL <- "Invalid storage location"
+            ELSE IF (stored[area][location] EQUAL NULL) THEN
+                FAIL <- "Food doesnt exist at location"
+            END IF
+
+            index = location
+            storageArea = stored[area]
+            storageArea[index] = NULL
+            counts[area] = counts[area] - 1
+
+            WHILE (index < length <- storageArea - 1 &&
+                   storageArea[index + 1] NOT EQUAL NULL) DO
+                storageArea[index] = storageArea[index + 1]
+                storageArea[index + 1] = NULL
+                index = index + 1
+            END WHILE
+        END ALGORITHM
+
+        SUBMODULE clone
+        IMPORT none
+        EXPORT (Storage) copy
+        ALGORITHM
+            copy = CONSTRUCT Storage WITH this
+        END ALGORITHM
+
+        SUBMODULE equals
+        IMPORT (Object) inObject
+        EXPORT (Boolean) isEqual
+        ALGORITHM
+            IF (inObject IS A Storage) THEN
+                inStorage = (Convert to Storage) inObject
+                inCounts = inStorage.getCounts <- none
+                isEqual = 
+                    counts[FREEZER_INDEX] EQUALS inCounts[FREEZER_INDEX] AND
+                    counts[FRIDGE_INDEX] EQUALS inCounts[FRIDGE_INDEX] AND
+                    counts[PANTRY_INDEX] EQUALS inCounts[PANTRY_INDEX]
+
+                IF (isEqual) THEN
+                    inStored = inStorage.getStored <- none
+                    isEqual = length <- stored EQUALS length <- inStored
+
+                    IF (isEqual) THEN
+                        FOR i = 0 TO length <- stored CHANGE 1 DO
+                            j = 0
+                            isEqual = length <- stored[i] EQUALS 
+                                      length <- inStored[i]
+                            WHILE (isEqual AND j < stored[i].length) DO
+                                isEqaul = stored[i][j] EQUALS inStored[i][j]
+                                j = j + 1
+                            END WHILE
+                        END FOR
+                    END IF
+                END IF
+            END IF
+        END ALGORITHM
+
+        SUBMODULE toString
+        IMPORT none
+        EXPORT (String) str
+        ALGORITHM
+            str = "Freezer: " + counts[FREEZER_INDEX] + 
+                  "/" + length <- stored[FREEZER_INDEX] +
+                  ", Fridge: " + counts[FRIDGE_INDEX] +
+                  "/" + length <- stored[FRIDGE_INDEX] +
+                  ", Pantry: " + counts[PANTRY_INDEX] +
+                  "/" + length <- stored[PANTRY_INDEX]
+        END ALGORITHM
+    END PUBLIC
+
+    PRIVATE
+        SUBMODULES
+            SUBMODULE validStorageAreaIndex
+            IMPORT (Integer) area
+            EXPORT (Boolean) valid
+            ALGORITHM
+                valid = area EQUALS FREEZER_INDEX OR
+                        area EQUALS FRIDGE_INDEX OR
+                        area EQUALS PANTRY_INDEX
+            END ALGORITHM
+
+            SUBMODULE copyCounts
+            IMPORT (Array OF Integer) inCounts
+            EXPORT (Array OF Integer) copy
+            ALGORITHM
+                copy = Array OF Integer SIZE length <- inCounts
+
+                FOR i = 0 TO length <- copy CHANGE 1 DO
+                    copy[i] = inCounts[i]
+                END FOR
+            END ALGORITHM
+
+            SUBMODULE copyStored
+            IMPORT (Array OF Array OF Food) inStored
+            EXPORT (Array OF Array OF Food) copy
+            ALGORITHM
+                copy = Array OF Array OF Food SIZE length <- inStored
+                
+                FOR i = 0 TO length <- inStored INCREMENT 1 DO
+                    copy[i] = Array OF Food SIZE length <- inStored[i]
+
+                    FOR j = 0 TO length <- length <- current INCREMENT 1 DO
+                        food = inStored[i][j]
+
+                        IF (food EQUALS NULL) THEN
+                            copy[i][j] = food
+                        ELSE
+                            copy[i][j] = food.clone <- none
+                        END IF
+                    END FOR
+                END FOR
+            END ALGORITHM
+        SUBMODULES
+    END PRIVATE
+END CLASS

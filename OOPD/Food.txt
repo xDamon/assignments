@@ -1,0 +1,133 @@
+ABSTRACT CLASS Food
+    PUBLIC
+        STATIC
+            FIELDS
+                MIN_STORAGE_TEMP = -273.15
+                MAX_STORAGE_TEMP = 40.0
+                TOLERANCE = 0.001
+            END FIELDS
+        END STATIC
+    END PUBLIC
+
+    PRIVATE
+        FIELDS
+            (String) name
+            (String) packaging
+            (Real) storageTemp
+            (Date) endDate
+        END FIELDS
+    END PRIVATE
+
+    CONSTRUCTORS
+        SUBMODULE Default
+        IMPORT none
+        EXPORT Food instance
+        ALGORITHM
+            name = "Default"
+            pacakging = "Box"
+            storageTemp = 3.0
+            endDate = today's Date
+        END ALGORITHM
+
+        SUBMODULE Alternate
+        IMPORT (String) inName,
+               (String) inPackaging,
+               (Real) inStorageTemp,
+               (Date) inEndDate
+        EXPORT Food instance
+        ALGORITHM
+            setName <- inName
+            setPackaging <- inPackaging
+            setStorageTemp <- inStorageTemp,
+            setEndDate <- inEndDate
+        END ALGORITHM
+
+        SUBMODULE Copy
+        IMPORT (Food) inFood
+        EXPORT Food instance
+        ALGORITHM
+            name = inFood.getName <- none
+            pacakging = inFood.getPackaging <- none
+            storageTemp = inFood.getStorageTemp <- none
+            endDate = inFood.getEndDate <- none
+        END ALGORITHM
+    END CONSTRUCTORS
+
+    ACCESSORS
+        SUBMODULE getName EXPORT COPIED FIELD name
+        SUBMODULE getPackaging EXPORT COPEID FIELD packaging
+        SUBMODULE getStorageTemp EXPORT COPIED FIELD storageTemp
+        SUBMODULE getEndDate EXPORT COPIED FIELD endDate
+    END ACCESSORS
+
+    MUTATORS
+        SUBMODULE setName
+        IMPORT (String) inName
+        EXPORT none
+        ALGORITHM
+            IF (inName EQUAL NULL) THEN
+                FAIL <- "name cant be null"
+            ELSE IF (inName is EMPTY) THEN
+                FAIL <- "name cant be empty"
+            END IF
+
+            name = inName
+        END ALGORITHM
+
+        SUBMODULE setPackaging
+        IMPORT (String) inPackaging
+        EXPORT none
+        ALGORITHM
+            IF (inPackaging EQUAL NULL) THEN
+                FAIL <- "packaging cant be null"
+            ELSE IF (packaging is EMPTY) THEN
+                FAIL <- "packaging cant be empty"
+            END IF
+
+            packaging = inPackaging
+        END ALGORITHM
+
+        SUBMODULE setStorageTemp
+        IMPORT (Real) inStorageTemp
+        EXPORT none
+        ALGORITHM
+            IF (inStorageTemp < MIN_STORAGE_TEMP OR
+                inStorageTemp > MAX_STORAGE_TEMP) THEN
+                FAIL <- "Storage temp must be between min and max"
+            END IF
+
+            storageTemp = inStorageTemp
+        END ALGORITHM
+
+        SUBMODULE setEndDate
+        IMPORT (Date) inEndDate
+        EXPORT none
+        ALGORITHM
+            IF (inEndDate is in the past) THEN
+                FAIL <- "end date cant be in the past"
+            END IF
+        END ALGORITHM
+    END MUTATORS
+
+    SUBMODULES
+        SUBMODULE equals
+        IMPORT (Object) inObject
+        EXPORT (Boolean) isEqual
+        ALGORITHM
+            isEqual = false
+
+            IF (inObject IS A Food) THEN
+                inFood = (Convert to Food) inObject
+                isEqual =
+                    name EQUALS inFood.getName <- none AND
+                    packaging EQUALS inFood.getPackaging <- none AND
+                    (storageTemp DIFF inFood.getStorageTemp <- none)
+                    < TOLERANCE AND
+                    endDate EQUALS inFood.getEndDate <- none
+            END IF
+        END ALGORITHM
+
+        ABSTRACT SUBMODULE toString IMPORT none EXPORT (String) str
+        ABSTRACT SUBMODULE clone IMPORT none EXPORT (Food) copy
+    END SUBMODULES
+END ABSTRACT CLASS

@@ -1,0 +1,130 @@
+CLASS Vegetable INHERITS FROM Food, IFood
+    PUBLIC
+        STATIC
+            FIELDS
+                (Real) MIN_WEIGHT = 0.2
+                (Real) MAX_WEIGHT = 5.0
+            END FIELDS
+        END STATIC
+    END PUBLIC
+
+    PRIVATE
+        FIELDS
+            (Real) weight
+        END FIELDS
+    END PRIVATE
+
+     CONSTRUCTORS
+        SUBMODULE Default
+        IMPORT none
+        EXPORT Vegetable instance
+        ALGORITHM
+            super <- none
+
+            weight = 2.5
+        END ALGORITHM
+
+        SUBMODULE Alternate
+        IMPORT (String) inName,
+               (String) inPackaging,
+               (Real) inStorageTemp,
+               (Date) inEndDate,
+               (Real) inWeight
+        EXPORT Vegetable instance
+        ALGORITHM
+            super <- inName, inPackaging, inStorageTemp, inEndDate
+
+            setWeight <- inWeight
+        END ALGORITHM
+
+        SUBMODULE Copy
+        IMPORT (Vegetable) inVegetable
+        EXPORT Vegetable instance
+        ALGORITHM
+            super <- inVegetable
+            
+            weight = inVegetable.getWeight <- none
+        END ALGORITHM
+    END CONSTRUCTORS
+
+    ACCESSORS
+        SUBMODULE getWeight EXPORT COPIED FIELD weight
+    END ACCESSORS
+
+    MUTATORS
+        SUBMODULE setWeight
+        IMPORT (Real) inWeight
+        EXPORT none
+        ALGORITHM
+            IF (inWeight < MIN_WEIGHT OR
+                inWeight > MAX_WEIGHT) THEN
+                FAIL <- "Weight must be between min and max"
+            END IF
+
+            weight = inWeight
+        END ALGORITHM
+    END MUTATORS
+
+    PUBLIC
+        SUBMODULES
+            SUBMODULE calcExpiry
+            IMPORT (Date) today
+            EXPORT (Boolean) expired
+            ALGORITHM
+                expired = false
+            END ALGORITHM
+
+            SUBMODULE calcSpace
+            IMPORT (Food) food
+            EXPORT (Integer) volume
+            ALGORITHM
+                IF (food IS A Meat) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Meat)  food).getWeight <- none
+                             x 0.86)
+                ELSE IF (food IS A Vegetable) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Vegetable) food).getWeight <- none
+                             x 1.025)
+                ELSE IF (food IS A Grain) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Grain) food).getVolume <- none)
+                ELSE IF (food IS A Fruit) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Fruit) food).getNumberOfPieces
+                             <- none x 1.95)
+                END IF
+            END ALGORITHM
+
+            SUBMODULE equals
+            IMPORT (Object) inObject
+            EXPORT (Boolean) isEqual
+            ALGORITHM
+                isEqual = false
+
+                IF (inObject IS A Vegetable) THEN
+                    inVegetable = (Convert to Vegetable) inObject
+                    isEqual = super.equals <- inVegetable AND
+                        (weight DIFF inVegetable.getWeight <- none)
+                        < Food.TOLERANCE
+                END IF
+            END ALGORITHM
+
+            SUBMODULE toString
+            IMPORT none
+            EXPORT (String) str
+            ALGORITHM
+                str = "Vegetable, " + getName <- none + ", " +
+                      weight + ", " + getStorageTemp <- none + ", " +
+                      getEndDate <- none + ", " + getPackaging <- none
+            END ALGORITHM
+
+            SUBMODULE clone
+            IMPORT none
+            EXPORT (Vegetable) copy
+            ALGORITHM
+                copy = CONSTRUCT Vegetable WITH this
+            END ALGORITHM
+        END SUBMODULES
+    END PUBLCI
+END CLASS

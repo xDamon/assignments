@@ -1,0 +1,9 @@
+INTERFACE IFood
+    SUBMODULE calcExpiry 
+    IMPORT (Date) today
+    EXPORT (Boolean) expired
+
+    SUBMODULE calcSpace
+    IMPORT (Food) food
+    EXPORT (Integer) volume
+END INTERFACE

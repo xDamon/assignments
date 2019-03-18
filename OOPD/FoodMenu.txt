@@ -1,0 +1,164 @@
+USES UserIO.txt
+USES Storage.txt
+
+CLASS FoodMenu
+    PUBLIC STATIC SUBMODULES
+        SUBMODULE run
+        IMPORT none
+        EXPORT none
+        ALGORITHM
+            storage = NULL
+            input = -1
+            options = Array OF String SIZE 7
+
+            options[0] = "Add Food"
+            options[1] = "Remove Food"
+            options[2] = "Display Contents"
+            options[3] = "Find Expired"
+            options[4] = "Read In Storage"
+            options[5] = "Write Out Storage"
+            options[6] = "Exit"
+
+            menu = UserIO.createMenu <- "Food Menu", options
+
+            OUTPUT menu
+
+            DO
+                input = UserIO.getInteger <- "Enter a menu option"
+
+                IF (input EQUALS length <- options) THEN
+                    OUTPUT "Exiting..."
+                ELSE IF (input DOES NOT EQUAL 5) THEN
+                    IF (storage EQUALS NULL) THEN
+                        OUTPUT "Error: Storage not initialised"
+                    ELSE
+                        CASE (input) OF
+                            1: addFood <- storage
+                            2: removeFood <- storage
+                            3: displayContents <- storage
+                            4: findExpired <- storage
+                            6: writeOutStorage <- storage
+                            DEFAULT: OUTPUT "Error: Invalid option"
+                        END CASE
+                    END IF
+                ELSE IF (storage EQUALS NULL) THEN
+                    storage = readInStorage <- none
+                ELSE
+                    OUTPUT "Cannot construct storage again"
+                END IF
+            WHILE (input DOES NOT EQUAL length <- options)
+        END ALGORITHM
+
+        SUBMODULE addFood
+        IMPORT (Storage) storage
+        EXPORT none
+        ALGORITHM
+            TRY
+                storage.store <- FoodFactory.createFromUser <- none
+            CATCH (Illegal Argument)
+                OUTPUT "Error"
+            END TRY CATCH
+        END ALGORITHM
+
+        SUBMODULE removeFood
+        IMPORT (Storage) storage
+        EXPORT none
+        ALGORITHM
+            area = -1
+            location = -1
+            options = Array OF String SIZE 3
+            options[0] = "Freezer"
+            options[1] = "Fridge"
+            options[2] = "Pantry"
+
+            menu = UserIO.createMenu <- "Area Menu", options
+
+            OUTPUT menu
+
+            area = (UserIO.getInteger <- "Enter a storage area") - 1
+            location = (UserIO.getInteger <- "Enter a storage location") - 1
+
+            TRY
+                storage.remove <- area, location
+            CATCH (Illegal Argument)
+                OUTPUT "Error"
+            END TRY CATCH
+        END ALGORITHM
+
+        SUBMODULE displayContents
+        IMPORT (Storage) storage
+        EXPORT none
+        ALGORITHM
+            area = -1
+            options = Array OF String SIZE 3
+            options[0] = "Freezer"
+            options[1] = "Fridge"
+            options[2] = "Pantry"
+
+            menu = UserIO.createMenu <- "Area Menu", options
+            title = "Contents"
+
+            OUTPUT menu
+
+            area = (UserIO.getInteger <- "Enter storage area" )- 1
+
+            TRY
+                OUTPUT title + storage.getContentsListIn <- area
+            CATCH (Illegal Argument)
+                OUTPUT "Error"
+            END CATCH
+        END ALGORITHM
+
+        SUBMODULE findExpired
+        IMPORT (Storage) storage
+        EXPORT none
+        ALGORITHM
+            expired = storage.getExpiredList <- none
+
+            OUTPIT "Expired" + expired
+        END ALGORITHM
+
+        SUBMODULE readInStorage
+        IMPORT none
+        EXPORT (Storage) storage
+        ALGORITHM
+            storage = NULL
+            input = UserIO.getString <- "Enter a storage file name"
+
+            TRY
+                storage = CONSTRUCT storage WITH input
+            CATCH (Input Output)
+                OUTPUT "Error"
+            END TRY CATCH
+
+            IF (storage NOT EQUAL NULL) THEN
+                OUTPUT "Storage loaded"
+            END IF
+        END ALGORITHM
+
+        SUBMODULE writeOutStorage
+        IMPORT (Storage) storage
+        EXPORT none
+        ALGORITHM
+            fileName = UserIO.getString <- "Enter output file: "
+            contents = SPLIT storage.getContentsList <- none
+                        ON new line character
+            areas = Array OF String SIZE 3
+            areas[0] = "Freezer, " + 
+                storage.getAreaCapacity <-Storage.FREEZER_INDEX,
+            areas[1] = "Fridge, " +
+                storage.getAreaCapacity <- Storage.FRIDGE_INDEX,
+            areas[2] = "Pantry, " +
+                storage.getAreaCapacity <- Storage.PANTRY_INDEX
+
+            combined = aJOIN contents ONTO areas
+
+            TRY
+                FileIO.writeNumLines <- fileName, combined
+                OUTPUT "Success"
+            CATCH (Input Ouput)
+                OUTPUT "Error"
+            END TRY CATCH
+        END ALGORITHM
+    END PUBLIC STATIC SUBMODULES
+END CLASS

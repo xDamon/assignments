@@ -1,0 +1,105 @@
+CLASS UserIO
+    PUBLIC STATIC SUBMODULES
+        SUBMODULE createMenu
+        IMPORT (String) title, (Array OF String) options
+        EXPORT (String) menu
+        ALGORITHM
+            menu = "===== " + title + " ====="
+
+            FOR i = 0 TO length <- options CHANGE 1 DO
+                menu = menu + "[" + (i + 1) + "] " + options[i] 
+            END FOR
+        END ALGORITHM
+
+        SUBMODULE getInteger
+        IMPORT (String) prompt
+        EXPORT (Integer) input
+        ALGORITHM
+            OUTPUT prompt
+
+            INPUT input
+
+            WHILE (input is NOT an Integer) DO
+                OUTPUT "Error: Input must be an integer"
+                OUTPUT prompt
+                INPUT input
+            END WHILE
+        END ALGORITHM
+
+        SUBMODULE getRangedInteger
+        IMPORT (String) prompt, (Integer) min, (Integer) max
+        EXPORT (Integer) input
+        ALGORITHM
+            input = getInteger <- prompt
+
+            WHILE (input < min OR input > max) DO
+                OUTPUT "Error: input must be between " +
+                    min + " and " + max
+                input = getInteger <- prompt
+            END WHILE
+        END ALGORITHM
+
+        SUBMODULE getReal
+        IMPORT (String) prompt
+        EXPORT (Real) input
+        ALGORITHM
+            OUTPUT prompt
+
+            INPUT input
+
+            WHILE (input is NOT a Real Number) DO
+                OUTPUT "Error: Input must be a real number"
+                OUTPUT prompt
+                INPUT input
+            END WHILE
+        END ALGORITHM
+
+        SUBMODULE getRangedReal
+        IMPORT (String) prompt, (Real) min, (Real) max
+        EXPORT (Real) input
+        ALGORITHM
+            input = getReal <- prompt
+
+            WHILE (input < min OR input > max) DO
+                OUTPUT "Error: input must be between " +
+                    min + " and " + max
+                input = getReal <- prompt
+            END WHILE
+        END ALGORITHM
+
+        SUBMODULE getString
+        IMPORT (String) prompt
+        EXPORT (String) input
+        ALGORITHM
+            INPUT input
+
+            WHILE (input is empty OR whitespace) DO
+                OUTPUT "Error: Input cannot be empty"
+                OUTPUT prompt
+                INPUT input
+            END WHILE
+        END ALGORITHM
+
+        SUBMODULE getDate
+        IMPORT (String) prompt
+        EXPORT (Date) date
+        ALGORITHM
+            valid = false
+
+            DO
+                input = getString <- prompt
+
+                TRY
+                    date = CONSTRUCT Date FROM input
+
+                    IF (date is before today) THEN
+                        OUTPUT "Error: date cannot be in the past"
+                    ELSE
+                        valid = true
+                CATCH (Illegal argument)
+                    OUTPUT "Error: Invalid date string"
+                END TRY CATCH
+            WHILE (NOT valid)
+        END ALGORITHM
+    END PUBLIC STATIC SUBMODULES
+END CLASS

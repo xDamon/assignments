@@ -1,0 +1,99 @@
+CLASS FoodFactory
+    PUBLIC STATIC SUBMODULES
+        SUBMODULE createFromLine
+        IMPORT (String) line
+        EXPORT (Food) food
+        ALGORITHM
+            food = NULL
+
+            tokens = SPLIT line ON ", "
+            group = UPPERCASE tokens[0]
+            name = tokens[1]
+            packaging = tokens[(length <- tokens) - 1]
+            temp = (Convert to Real) tokens[(length <- tokens) - 3]
+            endDate = CONSTRUCT Date FROM 
+                tokens[(length <- tokens) - 2]
+            END CONSTRUCT
+
+            IF (group EQUALS "MEAT") THEN
+                cut = tokens[2]
+                weight = (Convert to Real) tokens[3]
+                food = CONSTRUCT Meat WITH
+                    name, packaging, temp, endDate, cut, weight
+                END CONSTRUCT
+            ELSE IF (group EQUALS "VEGETABLE") THEN
+                weight = (Convert to Real) tokens[2]
+                food = CONSTRUCT Vegetable WITH
+                    name, packaging, temp, endDate, weight
+                END CONSTRUCT
+            ELSE IF (group EQUALS "FRUIT") THEN
+                type = tokens[2]
+                numberOfPieces = (Convert to Integer) tokens[3]
+                food = CONSTRUCT Fruit WITH
+                    name, packaging, temp, endDate, type, numberOfPieces
+                END CONSTRUCT
+            ELSE IF (group EQUALS "GRAIN") THEN
+                type = tokens[2]
+                volume = (Convert to Real) tokens[3]
+                food = CONSTRUCT Grain WITH
+                    name, packaging, temp, endDate, type, volume
+                END CONSTRUCT
+            ELSE
+                FAIL <- "Invalid line/group"
+            END IF
+        END ALGORITHM
+
+        SUBMODULE createFromUser
+        IMPORT none
+        EXPORT (Food) food
+        ALGORITHM
+            group = UPPERCASE UserIO.getString <- "Food group: "
+            name = UserIO.getString <- "Name: "
+            packaging = UserIO.getString <- "Packaging: "
+            temp = UserIO.getRangedReal <-
+                "Storage temperature: ",
+                Food.MIN_STORAGE_TEMP,
+                FOOD.MAX_STORAGE_TEMP
+            endDate = UserIO.getDate <- "Use by / best before: "
+
+            IF (group EQUALS "MEAT") THEN
+                cut = UserIO.getString <- "Cut: "
+                weight = UserIO.getRangedReal <-
+                    "Weight: ",
+                    Meat.MIN_WEIGHT,
+                    Meat.MAX_WEIGHT
+                food = CONSTRUCT Meat WITH
+                    name, packaging, temp, endDate, cut, weight
+                END CONSTRUCT
+            ELSE IF (group EQUALS "VEGETABLE") THEN
+                weight = UserIO.getRangedReal <-
+                    "Weight: ",
+                    Vegetable.MIN_WEIGHT,
+                    Vegetable.MAX_WEIGHT
+                food = CONSTRUCT Vegetable WITH
+                    name, packaging, temp, endDate, weight
+                END CONSTRUCT
+            ELSE IF (group EQUALS "FRUIT") THEN
+                type = UserIO.getString <- "Type: "
+                numberOfPieces = UserIO.getRangedInteger <-
+                    "Number of pieces: ",
+                    Fruit.MIN_NUMBER_OF_PIECES,
+                    Fruit.MAX_NUMBER_OF_PIECES
+                food = CONSTRUCT Fruit WITH
+                    name, packaging, temp, endDate, type, numberOfPieces
+                END CONSTRUCT
+            ELSE IF (group EQUALS "GRAIN") THEN
+                type = UserIO.getString <- "Type: "
+                volume = UserIO.getRangedReal <-
+                    "Volume: "
+                    Grain.MIN_VOLUME,
+                    Grain.MAX_VOLUME
+                food = CONSTRUCT GRAIN WITH
+                    name, packaging, temp, endDate, type, volume
+                END CONSTRUCT
+            ELSE
+                FAIL <- "Invalid food group"
+            END IF
+        END ALGORITHM
+    END PUBLIC STATIC SUBMODULES
+END CLASS

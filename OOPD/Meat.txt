@@ -1,0 +1,149 @@
+CLASS Meat INHERITS FROM Food, IFood
+    PUBLIC
+        STATIC
+            FIELDS
+                (Real) MIN_WEIGHT = 0.2
+                (Real) MAX_WEIGHT = 5.0
+            END FIELDS
+        END STATIC
+    END PUBLIC
+
+    PRIVATE
+        FIELDS
+            (String) cut
+            (Real) weight
+        END FIELDS
+    END PRIVATE
+
+     CONSTRUCTORS
+        SUBMODULE Default
+        IMPORT none
+        EXPORT Meat instance
+        ALGORITHM
+            super <- none
+
+            cut = "Default Cut"
+            weight = 2.5
+        END ALGORITHM
+
+        SUBMODULE Alternate
+        IMPORT (String) inName,
+               (String) inPackaging,
+               (Real) inStorageTemp,
+               (Date) inEndDate,
+               (String) inCut,
+               (Real) inWeight
+        EXPORT Meat instance
+        ALGORITHM
+            super <- inName, inPackaging, inStorageTemp, inEndDate
+
+            setCut <- inCut
+            setWeight <- inWeight
+        END ALGORITHM
+
+        SUBMODULE Copy
+        IMPORT (Meat) inMeat
+        EXPORT Meat instance
+        ALGORITHM
+            super <- inMeat
+            
+            cut = inMeat.getCut <- none
+            weight = inMeat.getWeight <- none
+        END ALGORITHM
+    END CONSTRUCTORS
+
+    ACCESSORS
+        SUBMODULE getCut EXPORT COPIED FIELD cut
+        SUBMODULE getWeight EXPORT COPIED FIELD weight
+    END ACCESSORS
+
+    MUTATORS
+        SUBMODULE setCut
+        IMPORT (String) inCut
+        EXPORT none
+        ALGORITHM
+            IF (inCut EQUAL NULL) THEN
+                FAIL <- "cut can't be null"
+            ELSE IF (inCut is EMPTY) THEN
+                FAIL <- "cut can't be empty"
+            END IF
+
+            cut = inCut
+        END ALGORITHM
+
+        SUBMODULE setWeight
+        IMPORT (Real) inWeight
+        EXPORT none
+        ALGORITHM
+            IF (inWeight < MIN_WEIGHT OR
+                inWeight > MAX_WEIGHT) THEN
+                FAIL <- "Weight must be between min and max"
+            END IF
+
+            weight = inWeight
+        END ALGORITHM
+    END MUTATORS
+
+    PUBLIC
+        SUBMODULES
+            SUBMODULE calcExpiry
+            IMPORT (Date) today
+            EXPORT (Boolean) expired
+            ALGORITHM
+                expired = endDate IS NOT AFTER today
+            END ALGORITHM
+
+            SUBMODULE calcSpace
+            IMPORT (Food) food
+            EXPORT (Integer) volume
+            ALGORITHM
+                IF (food IS A Meat) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Meat)  food).getWeight <- none
+                             x 0.86)
+                ELSE IF (food IS A Vegetable) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Vegetable) food).getWeight <- none
+                             x 1.025)
+                ELSE IF (food IS A Grain) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Grain) food).getVolume <- none)
+                ELSE IF (food IS A Fruit) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Fruit) food).getNumberOfPieces
+                             <- none x 1.95)
+                END IF
+            END ALGORITHM
+
+            SUBMODULE equals
+            IMPORT (Object) inObject
+            EXPORT (Boolean) isEqual
+            ALGORITHM
+                isEqual = false
+
+                IF (inObject IS A Meat) THEN
+                    inMeat = (Convert to Meat) inObject
+                    isEqual = super.equals <- inMeat AND
+                        cut EQUALS inMeat.getCut <- none AND
+                        (weight DIFF inMeat.getWeight <- none) < Food.TOLERANCE
+                END IF
+            END ALGORITHM
+
+            SUBMODULE toString
+            IMPORT none
+            EXPORT (String) str
+            ALGORITHM
+                str = "Meat, " + getName <- none + ", " + cut + ", " +
+                      weight + ", " + getStorageTemp <- none + ", " +
+                      getEndDate <- none + ", " + getPackaging <- none
+            END ALGORITHM
+
+            SUBMODULE clone
+            IMPORT none
+            EXPORT (Meat) copy
+            ALGORITHM
+                copy = CONSTRUCT Meat WITH this
+            END ALGORITHM
+        END SUBMODULES
+    END PUBLCI
+END CLASS

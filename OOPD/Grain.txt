@@ -1,0 +1,149 @@
+CLASS Grain INHERITS FROM Food, IFood
+    PUBLIC
+        STATIC
+            FIELDS
+                (Real) MIN_VOLUME = 0.2
+                (Real) MAX_VOLUME = 5.0
+            END FIELDS
+        END STATIC
+    END PUBLIC
+
+    PRIVATE
+        FIELDS
+            (String) type
+            (Real) volume
+        END FIELDS
+    END PRIVATE
+
+     CONSTRUCTORS
+        SUBMODULE Default
+        IMPORT none
+        EXPORT Grain instance
+        ALGORITHM
+            super <- none
+
+            type = "Default Type"
+            volume = 10.0
+        END ALGORITHM
+
+        SUBMODULE Alternate
+        IMPORT (String) inName,
+               (String) inPackaging,
+               (Real) inStorageTemp,
+               (Date) inEndDate,
+               (String) inType,
+               (Real) inVolume
+        EXPORT Grain instance
+        ALGORITHM
+            super <- inName, inPackaging, inStorageTemp, inEndDate
+
+            setType <- inType
+            setVolume <- inVolume
+        END ALGORITHM
+
+        SUBMODULE Copy
+        IMPORT (Grain) inGrain
+        EXPORT Grain instance
+        ALGORITHM
+            super <- inGrain
+            
+            type = inGrain.getType <- none
+            volume = inGrain.getVolume <- none
+        END ALGORITHM
+    END CONSTRUCTORS
+
+    ACCESSORS
+        SUBMODULE getType EXPORT COPIED FIELD type
+        SUBMODULE getVolume EXPORT COPIED FIELD volume
+    END ACCESSORS
+
+    MUTATORS
+        SUBMODULE setType
+        IMPORT (String) inType
+        EXPORT none
+        ALGORITHM
+            IF (inType EQUAL NULL) THEN
+                FAIL <- "type can't be null"
+            ELSE IF (inType is EMPTY) THEN
+                FAIL <- "type can't be empty"
+            END IF
+
+            type = inType
+        END ALGORITHM
+
+        SUBMODULE setVolume
+        IMPORT (Real) inVolume
+        EXPORT none
+        ALGORITHM
+            IF (inVolume < MIN_VOLUME OR
+                inVolume > MAX_VOLUME) THEN
+                FAIL <- "volume must be between min and max"
+            END IF
+
+            volume = inVolume
+        END ALGORITHM
+    END MUTATORS
+
+    PUBLIC
+        SUBMODULES
+            SUBMODULE calcExpiry
+            IMPORT (Date) today
+            EXPORT (Boolean) expired
+            ALGORITHM
+                expired = false
+            END ALGORITHM
+
+            SUBMODULE calcSpace
+            IMPORT (Food) food
+            EXPORT (Integer) volume
+            ALGORITHM
+                IF (food IS A Meat) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Meat)  food).getVolume <- none
+                             x 0.86)
+                ELSE IF (food IS A Vegetable) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Vegetable) food).getVolume <- none
+                             x 1.025)
+                ELSE IF (food IS A Grain) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Grain) food).getVolume <- none)
+                ELSE IF (food IS A Fruit) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Fruit) food).getNumberOfPieces
+                             <- none x 1.95)
+                END IF
+            END ALGORITHM
+
+            SUBMODULE equals
+            IMPORT (Object) inObject
+            EXPORT (Boolean) isEqual
+            ALGORITHM
+                isEqual = false
+
+                IF (inObject IS A Grain) THEN
+                    inGrain = (Convert to Grain) inObject
+                    isEqual = super.equals <- inGrain AND
+                        type EQUALS inGrain.getType <- none AND
+                        (volume DIFF inGrain.getVolume <- none) < Food.TOLERANCE
+                END IF
+            END ALGORITHM
+
+            SUBMODULE toString
+            IMPORT none
+            EXPORT (String) str
+            ALGORITHM
+                str = "Grain, " + getName <- none + ", " + type + ", " +
+                      volume + ", " + getStorageTemp <- none + ", " +
+                      getEndDate <- none + ", " + getPackaging <- none
+            END ALGORITHM
+
+            SUBMODULE clone
+            IMPORT none
+            EXPORT (Grain) copy
+            ALGORITHM
+                copy = CONSTRUCT Grain WITH this
+            END ALGORITHM
+        END SUBMODULES
+    END PUBLCI
+END CLASS

@@ -1,0 +1,149 @@
+CLASS Fruit INHERITS FROM Food, IFood
+    PUBLIC
+        STATIC
+            FIELDS
+                (Integer) MIN_NUMBER_OF_PIECES = 1
+                (Integer) MAX_NUMBER_OF_PIECES = 20
+            END FIELDS
+        END STATIC
+    END PUBLIC
+
+    PRIVATE
+        FIELDS
+            (String) type
+            (Integer) numberOfPieces
+        END FIELDS
+    END PRIVATE
+
+     CONSTRUCTORS
+        SUBMODULE Default
+        IMPORT none
+        EXPORT Fruit instance
+        ALGORITHM
+            super <- none
+
+            type = "Default Type"
+            numberOfPieces = 10
+        END ALGORITHM
+
+        SUBMODULE Alternate
+        IMPORT (String) inName,
+               (String) inPackaging,
+               (Real) inStorageTemp,
+               (Date) inEndDate,
+               (String) inType,
+               (Integer) inNumberOfPieces
+        EXPORT Fruit instance
+        ALGORITHM
+            super <- inName, inPackaging, inStorageTemp, inEndDate
+
+            setType <- inType
+            setNumberOfPieces <- inNumberOfPieces
+        END ALGORITHM
+
+        SUBMODULE Copy
+        IMPORT (Fruit) inFruit
+        EXPORT Fruit instance
+        ALGORITHM
+            super <- inFruit
+            
+            type = inFruit.getType <- none
+            numberOfPieces = inFruit.getNumberOfPieces <- none
+        END ALGORITHM
+    END CONSTRUCTORS
+
+    ACCESSORS
+        SUBMODULE getType EXPORT COPIED FIELD type
+        SUBMODULE getNumberOfPieces EXPORT COPIED FIELD numberOfPieces
+    END ACCESSORS
+
+    MUTATORS
+        SUBMODULE setType
+        IMPORT (String) inType
+        EXPORT none
+        ALGORITHM
+            IF (inType EQUAL NULL) THEN
+                FAIL <- "type can't be null"
+            ELSE IF (inType is EMPTY) THEN
+                FAIL <- "type can't be empty"
+            END IF
+
+            type = inType
+        END ALGORITHM
+
+        SUBMODULE setNumberOfPieces
+        IMPORT (Real) inNumberOfPieces
+        EXPORT none
+        ALGORITHM
+            IF (inNumberOfPieces < MIN_NUMBER_OF_PIECES OR
+                inNumberOfPieces > MAX_NUMBER_OF_PIECES) THEN
+                FAIL <- "number of pieces must be between min and max"
+            END IF
+
+            numberOfPieces = inNumberOfPieces
+        END ALGORITHM
+    END MUTATORS
+
+    PUBLIC
+        SUBMODULES
+            SUBMODULE calcExpiry
+            IMPORT (Date) today
+            EXPORT (Boolean) expired
+            ALGORITHM
+                expired = endDate IS NOT AFTER today
+            END ALGORITHM
+
+            SUBMODULE calcSpace
+            IMPORT (Food) food
+            EXPORT (Integer) volume
+            ALGORITHM
+                IF (food IS A Meat) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Meat)  food).getNumberOfPieces <- none
+                             x 0.86)
+                ELSE IF (food IS A Vegetable) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Vegetable) food).getNumberOfPieces <- none
+                             x 1.025)
+                ELSE IF (food IS A Grain) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Grain) food).getNumberOfPieces <- none)
+                ELSE IF (food IS A Fruit) THEN
+                    volume = (Round up to Integer)
+                             (((Convert to Fruit) food).getNumberOfPieces
+                             <- none x 1.95)
+                END IF
+            END ALGORITHM
+
+            SUBMODULE equals
+            IMPORT (Object) inObject
+            EXPORT (Boolean) isEqual
+            ALGORITHM
+                isEqual = false
+
+                IF (inObject IS A Fruit) THEN
+                    inFruit = (Convert to Fruit) inObject
+                    isEqual = super.equals <- inFruit AND
+                        type EQUALS inFruit.getType <- none AND
+                        numberOfPieces EQUALS inFruit.getNumberOfPieces <- none
+                END IF
+            END ALGORITHM
+
+            SUBMODULE toString
+            IMPORT none
+            EXPORT (String) str
+            ALGORITHM
+                str = "Fruit, " + getName <- none + ", " + type + ", " +
+                      numberOfPieces + ", " + getStorageTemp <- none + ", " +
+                      getEndDate <- none + ", " + getPackaging <- none
+            END ALGORITHM
+
+            SUBMODULE clone
+            IMPORT none
+            EXPORT (Fruit) copy
+            ALGORITHM
+                copy = CONSTRUCT Fruit WITH this
+            END ALGORITHM
+        END SUBMODULES
+    END PUBLCI
+END CLASS
