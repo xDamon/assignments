@@ -1,6 +1,6 @@
 # Assignments
 
-This is a repository that contains my programming related assignments for my University courses
+This is a repository that contains my programming related assignments for my University units.
 
 # Information
 
